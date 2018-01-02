@@ -7,7 +7,7 @@ project (sma)
 #set(CMAKE_BUILD_TYPE Release)
 set(CMAKE_BUILD_TYPE DEBUG)
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
 
 find_package( BLAS REQUIRED )
 

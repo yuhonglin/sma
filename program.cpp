@@ -1,5 +1,6 @@
 #include "program.h"
 #include <string.h>
+#include <iostream>
 
 // Function definitions.
 // -----------------------------------------------------------------
@@ -73,7 +74,7 @@ Program::Program (int n, int m, int maxiter, double factr, double pgtol) {
 }
 
 Program::~Program() { 
-  if (owner) {
+  if (owner) {    
     delete[] x;
     delete[] lb;
     delete[] ub;

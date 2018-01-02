@@ -9,6 +9,7 @@
 
 #include <set>
 #include <string>
+#include <stdexcept>
 
 #include "variable.hpp"
 
@@ -22,13 +23,19 @@ public:
   virtual double func() = 0;
 
   // compute the gradient of the term.
-  virtual void   inc_grad(Variable* v, double* g) = 0;
+  virtual void   inc_grad(Variable* v, double* g) {
+    // do nothing
+  };
 
   // add variables (will be optimized)
-  virtual void   add_var(Variable* v) = 0;
+  virtual void   add_var(Variable* v) {
+    throw std::out_of_range("Not supported");
+  };
 
   // add parameters (will keep constant)
-  virtual void   add_param(Variable* y) = 0;
+  virtual void   add_param(Variable* y) {
+    throw std::out_of_range("Not supported");
+  };
 
   void set_lambda(double l) { lambda_ = l; }
 

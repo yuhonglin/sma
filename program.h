@@ -83,13 +83,14 @@ public:
   // Run the solver. Upon completion, the solution is stored in "x".
   SolverExitStatus runSolver();
 
-protected:
+ private:
 
   // The copy constructor and copy assignment operator are kept
   // private so that they are not used.
-  Program            (const Program& source) { };
-  Program& operator= (const Program& source) { return *this; };
+  Program            (const Program& source);
+  Program& operator= (const Program& source);
 
+protected:  
   int     n;       // The number of variables.
   double* x;       // The current point.
   double* lb;      // The lower bounds.

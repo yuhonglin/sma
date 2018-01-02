@@ -31,7 +31,7 @@ public:
     };
     virtual ~MatFact() = default;
 
-    virtual double func() {
+  virtual double func() {
 	double ret = 0.;
 	// first update FXY_ to F_ * X_
 	FORTRAN(dgemm)(&blas::N, &blas::N, &m_, &n_, &k_,
@@ -54,26 +54,28 @@ public:
 
 	ret *= .5;
 	
-	return lambda_*ret;
+	return lambda_*ret/(m_*n_);
     };
     
-    virtual void   inc_grad(Variable* v, double* g) {
-	if (v->name() == "F") {
-	    // dF is stacked column by column
-	    //   g   = lambda* (  FX   -   Y  )  * ( X )' + g
-	    // (mxk)             (mxn)   (mxn)     (kxn)
-	    FORTRAN(dgemm)(&blas::N, &blas::T, &m_, &k_, &n_,
-			   &lambda_, FXY_.get(), &m_, X_->data(), &k_, &blas::done, g, &m_);
-	} else if (v->name() == "X") {
-	    // dX is stacked column by column
-	    //   g   =   lambda* ( F )' * (  FX   -   Y  ) + g
-	    // (kxn)             (mxk)      (mxn)   (mxn) 
-	    FORTRAN(dgemm)(&blas::T, &blas::N, &k_, &n_, &m_,
-			   &lambda_, F_->data(), &m_, FXY_.get(), &m_, &blas::done, g, &k_);
-	} else {
-	  throw std::invalid_argument("MatFact: unknown variable");
-	}
+  virtual void   inc_grad(Variable* v, double* g) {
+    double rate = lambda_/(m_*n_);
+    
+    if (v->name() == "F") {
+      // dF is stacked column by column
+      //   g   = lambda* (  FX   -   Y  )  * ( X )' + g
+      // (mxk)             (mxn)   (mxn)     (kxn)
+      FORTRAN(dgemm)(&blas::N, &blas::T, &m_, &k_, &n_,
+		     &rate, FXY_.get(), &m_, X_->data(), &k_, &blas::done, g, &m_);
+    } else if (v->name() == "X") {
+      // dX is stacked column by column
+      //   g   =   lambda* ( F )' * (  FX   -   Y  ) + g
+      // (kxn)             (mxk)      (mxn)   (mxn) 
+      FORTRAN(dgemm)(&blas::T, &blas::N, &k_, &n_, &m_,
+		     &rate, F_->data(), &m_, FXY_.get(), &m_, &blas::done, g, &k_);
+    } else {
+      throw std::invalid_argument("MatFact: unknown variable");
     }
+  }
 
   virtual void   add_var(Variable* v) {
     if (v->name() == "F") {

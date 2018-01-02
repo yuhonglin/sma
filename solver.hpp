@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <vector>
+#include <memory>
+#include <iostream>
 
 #include "program.h"
 
@@ -20,7 +22,8 @@ public:
 		v->ub(),
 		v->btype(),
 		5, 1000, 1e7, 1e-5) {};
-  virtual ~SubSolver() = default;
+  virtual ~SubSolver() {
+  }
 
   double computeObjective (int n, double* x) {
     return loss_->func(var_);
@@ -31,6 +34,8 @@ public:
   }
     
 private:
+  SubSolver(const SubSolver&);
+  SubSolver& operator=(const SubSolver&);
   Variable* var_ ;
   Loss*     loss_;
 };
@@ -39,12 +44,11 @@ private:
 class Solver
 {
 public:
-  Solver(Loss* l) : loss_(l), subsolvers_(l->vars().size()),
-		    ftol_(1e-5), maxiter_(1000) {
+  Solver(Loss* l) : loss_(l), ftol_(1e-5), maxiter_(1000), subsolvers_(l->vars().size()) {
     int i = 0;
     for (auto &v : l->vars()) {
       subsolvers_[i].reset(new SubSolver(l, v));
-      i++;
+      i ++;
     }
   };
   virtual ~Solver() = default;
@@ -72,6 +76,9 @@ public:
   }
 
 private:
+  Solver(const Solver&);
+  Solver& operator=(const Solver&);
+  
   Loss * loss_;
   std::vector<std::unique_ptr<SubSolver>> subsolvers_;
   int maxiter_;
