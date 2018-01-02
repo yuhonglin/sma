@@ -14,8 +14,8 @@
 class Loss
 {
 public:
-    Loss();
-    virtual ~Loss();
+    Loss() = default;
+    virtual ~Loss() = default;
 
     double func(Variable* v) {
 	double ret = 0.0;
@@ -49,7 +49,7 @@ public:
 	terms_.insert(t);
 	vars_.insert(t->vars().begin(), t->vars().end());
 
-	for (const auto &i : t.vars()) {
+	for (const auto &i : t->vars()) {
 	    if (varnm_terms_.find(i->name()) == varnm_terms_.end()) {
 		varnm_terms_[i->name()] = { t };
 	    } else {
@@ -61,9 +61,9 @@ public:
     const std::set<Variable*>& vars() { return vars_; }
     
 private:
-    std::map<std::string, std::set<Terms*>>    varnm_terms_;
-    std::set<Variable*>                        vars_ ;
-    std::set<Term*>                            terms_;
+    std::map<std::string, std::set<Term*>>    varnm_terms_;
+    std::set<Variable*>                       vars_ ;
+    std::set<Term*>                           terms_;
 };
 
 

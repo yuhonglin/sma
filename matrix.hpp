@@ -4,7 +4,7 @@
 
 // interface to BLAS
 
-#define FORTRAN(x) x
+#define FORTRAN(x) x##_
 
 namespace blas {
   double done  = 1.;

@@ -15,25 +15,28 @@
 class Term
 {
 public:
-    Term() : lambda_(1.) {};
-    virtual ~Term() = default;
+  Term() : lambda_(1.) {};
+  virtual ~Term() = default;
 
-    // compute the value of the term.
-    virtual double func() = 0;
+  // compute the value of the term.
+  virtual double func() = 0;
 
-    // compute the gradient of the term.
-    virtual void   inc_grad(Variable* v, double* g) = 0;
+  // compute the gradient of the term.
+  virtual void   inc_grad(Variable* v, double* g) = 0;
 
-    // add variables
-    virtual void   add_var(std::string nm, Variable* v) = 0;
+  // add variables (will be optimized)
+  virtual void   add_var(Variable* v) = 0;
 
-    void set_lambda(double l) { lambda_ = l; }
+  // add parameters (will keep constant)
+  virtual void   add_param(Variable* y) = 0;
 
-    const std::set<Variable*>& vars() { return vars_; }
+  void set_lambda(double l) { lambda_ = l; }
+
+  const std::set<Variable*>& vars() { return vars_; }
     
-private:
-    double lambda_;
-    std::set<Variable*> vars_;
+protected:
+  double lambda_;
+  std::set<Variable*> vars_;
     
 };
 
