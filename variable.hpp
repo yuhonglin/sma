@@ -9,6 +9,7 @@
 #include <string>
 #include <iostream>
 #include <exception>
+#include <iomanip>
 
 #include <cstdlib>
 #include <cmath>
@@ -119,7 +120,7 @@ namespace std {
     c << v.name() << " = \n";
     for (int i = 0; i < v.m(); i++) {
       for (int j = 0; j < v.n(); j++) {
-	c << v.data()[j*v.m()+i] << '\t';
+	c << std::setw(14) << std::left << v.data()[j*v.m()+i];
       }
       c << '\n';
     }

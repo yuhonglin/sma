@@ -22,6 +22,10 @@ public:
 		v->ub(),
 		v->btype(),
 		5, 1000, 1e7, 1e-5) {};
+  
+  SubSolver(const SubSolver&) = delete;
+  SubSolver& operator=(const SubSolver&) = delete;
+  
   virtual ~SubSolver() {
   }
 
@@ -33,9 +37,7 @@ public:
     loss_->grad(var_, g);
   }
     
-private:
-  SubSolver(const SubSolver&);
-  SubSolver& operator=(const SubSolver&);
+private:    
   Variable* var_ ;
   Loss*     loss_;
 };
