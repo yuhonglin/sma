@@ -1,0 +1,101 @@
+// Define auto regression term.
+// Currently, only support basic mode: create an ar model for each row
+
+#ifndef AR_H
+#define AR_H
+
+#include <vector>
+#include <iostream>
+#include <memory>
+#include <cmath>
+#include <stdexcept>
+#include <algorithm>
+
+#include "matrix.hpp"
+#include "term.hpp"
+
+
+class AutoReg : public Term
+{
+public:
+  AutoReg(Variable* v, Variable* p, const std::vector<int>& ls)
+    : var_(v), param_(p), lags_(ls)
+  {
+    if (v->m() != p->m() or p->n()!=ls.size()) {
+      throw std::invalid_argument("AR: incompatible inputs");
+    }
+    
+    max_lag_ = *std::max_element(lags_.begin(), lags_.end());
+
+    diff_.reset(new double[(var_->n() - max_lag_) * var_->m()]);
+
+    vars_.insert(v);
+    vars_.insert(p);
+  };
+  
+  virtual ~AutoReg() = default;
+  
+  virtual double func() {
+    double ret = 0.;
+    int base = var_->m()*max_lag_;
+    int diffiter = 0;
+    for (int j = 0; j < var_->n()-max_lag_; j++) {
+      for (int i = 0; i < var_->m(); i++) {
+	diff_[diffiter] = var_->data()[base+diffiter];
+
+	for (int k = 0; k < lags_.size(); k++) {
+	  diff_[diffiter] -= param_->data()[k*param_->m()+i]
+	    * var_->data()[(max_lag_+j-lags_[k])*var_->m()+i];
+	}
+
+	ret += std::pow(diff_[diffiter], 2);
+	
+	diffiter ++;
+      }
+    }
+
+    return 0.5*lambda_*ret;
+  }
+
+  virtual void   inc_grad(Variable* v, double* g) {
+    if (v == var_) {
+      int base = var_->m()*max_lag_;
+      int diffiter = 0;      
+      for (int j = 0; j < var_->n()-max_lag_; j++) {
+	for (int i = 0; i < var_->m(); i++) {
+	  int vi = base+j*var_->m()+i;
+	  g[vi] += lambda_ * diff_[diffiter];
+	  for(int k = 0; k < lags_.size(); k++) {
+	    g[vi - lags_[k]*var_->m()] -= lambda_ * diff_[diffiter] * param_->data()[k*param_->m()+i];
+	  }
+	  diffiter ++;
+	}
+      }
+    } else if (v == param_) {
+      int base = var_->m()*max_lag_;
+      int diffiter = 0;      
+      for (int j = 0; j < var_->n()-max_lag_; j++) {
+	for (int i = 0; i < var_->m(); i++) {
+	  for(int k = 0; k < lags_.size(); k++) {
+	    int pi = k*param_->m() + i;
+	    g[pi] -= lambda_ * diff_[diffiter]
+	      * var_->data()[(max_lag_+j-lags_[k])*var_->m() + i];
+	  }
+	  diffiter ++;
+	}
+      }
+    } else {
+      throw std::invalid_argument("AR: unknown variable");
+    }
+  }
+  
+private:
+  Variable* param_;   // the parameter of ar model
+  Variable* var_;     // the data to be build a model on
+  std::vector<int> lags_;
+  int max_lag_;
+  std::unique_ptr<double[]> diff_;
+};
+
+
+#endif /* AR_H */
