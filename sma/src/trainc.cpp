@@ -2,7 +2,9 @@
 #include <cstdlib>
 
 #include <R.h>
-#inlcude <Rinternals.h>
+#include <Rinternals.h>
+
+#undef length
 
 #include "loss.hpp"
 #include "mf.hpp"
@@ -11,18 +13,20 @@
 #include "ar.hpp"
 #include "diff1.hpp"
 
-extern "C" SEXP forecastc(SEXP Y_R,             // data matrix
-			  SEXP k_R,             // the lower rank
-			  SEXP lag_R,           // a vector of lags
+extern "C" SEXP forecastc(SEXP Y_R,           // data matrix
+			  SEXP k_R,           // the lower rank
+			  SEXP lag_R,         // a vector of lags
 			  SEXP lam_nF_R,      // lambda for ||F||^2
 			  SEXP lam_nX_R,      // lambda for ||X||^2
 			  SEXP lam_AR_R,      // lambda for auto regression
 			  SEXP lam_nT_R,      // lambda for ||Theta||^2
-			  SEXP lam_nDF_R) {   // lambda for ||DF||^2
+			  SEXP lam_nDF_R,     // lambda for ||DF||^2
+			  SEXP flen_R) {        // forecast length
   
   /// adapt input
-  int m = Rf_nrows(y_R);
-  int n = Rf_ncols(y_R);
+  int m = Rf_nrows(Y_R);
+  int n = Rf_ncols(Y_R);
+
   Variable Y(m, n, "Y");
   for (int i = 0; i < m*n; i++)
     Y.data()[i] = REAL(Y_R)[i];
@@ -32,20 +36,25 @@ extern "C" SEXP forecastc(SEXP Y_R,             // data matrix
     lag.push_back(static_cast<int>(REAL(lag_R)[i]));
   }
   
-  int k = static_cast<int>(*REAL(k));
-  
+  int k = static_cast<int>(*REAL(k_R));
+
   double lam_nF  = *REAL(lam_nF_R);
   double lam_nX  = *REAL(lam_nX_R);
   double lam_AR  = *REAL(lam_AR_R);
   double lam_nT  = *REAL(lam_nT_R);
   double lam_nDF = *REAL(lam_nDF_R);
-  
 
+  int flen = static_cast<int>(*REAL(flen_R));
+  
   /// construct the model
   Variable F(m, k, "F");
   Variable X(k, n, "X");
-  Variable T(k, lag.size());
+  Variable T(k, lag.size(), "T");
 
+  F.init_unif(-1,1);
+  X.init_unif(-1,1);
+  T.init_unif(-1,1);  
+  
   MatFact mf(m, n, k);  
   mf.add_var(&F);
   mf.add_var(&X);
@@ -78,9 +87,12 @@ extern "C" SEXP forecastc(SEXP Y_R,             // data matrix
   Solver solver(&l);
   solver.solve();
 
+  // forecast
+  auto X_forecast = ar.forecast(flen);
+
   // return value: a list of matrices: F, X and T.
-  SEXP nms = PROTECT(allocVector(STRSXP, 3));
-  SEXP ret = PROTECT(allocVector(VECSXP, 3));
+  SEXP nms = PROTECT(allocVector(STRSXP, 4));
+  SEXP ret = PROTECT(allocVector(VECSXP, 4));
   
   SET_STRING_ELT(nms, 0, Rf_mkCharLen("F",1));
   SEXP rF = PROTECT(Rf_allocMatrix(REALSXP, m, k));
@@ -96,10 +108,18 @@ extern "C" SEXP forecastc(SEXP Y_R,             // data matrix
 
   SET_STRING_ELT(nms, 2, Rf_mkCharLen("T",1));
   SEXP rT = PROTECT(Rf_allocMatrix(REALSXP, k, lag.size()));
-  std::memcpy(REAL(rF), T.data(), sizeof(double) * k*lag.size());
+  std::memcpy(REAL(rT), T.data(), sizeof(double) * k*lag.size());
   SET_VECTOR_ELT(ret, 2, rT);
   UNPROTECT(1);
 
+  SET_STRING_ELT(nms, 3, Rf_mkCharLen("X.forecast",10));
+  SEXP rXfor = PROTECT(Rf_allocMatrix(REALSXP, X_forecast->m(), X_forecast->n()));
+  std::memcpy(REAL(rXfor), X_forecast->data(),
+	      sizeof(double) * X_forecast->m()*X_forecast->n());
+  SET_VECTOR_ELT(ret, 3, rXfor);
+  UNPROTECT(1);
+
+  
   setAttrib(ret, R_NamesSymbol, nms);
   UNPROTECT(2);
 

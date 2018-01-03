@@ -24,9 +24,9 @@ public:
     if (v->m() != p->m() or p->n()!=ls.size()) {
       throw std::invalid_argument("AR: incompatible inputs");
     }
-    
-    max_lag_ = *std::max_element(lags_.begin(), lags_.end());
 
+    max_lag_ = *std::max_element(lags_.begin(), lags_.end());
+    
     diff_.reset(new double[(var_->n() - max_lag_) * var_->m()]);
 
     vars_.insert(v);
