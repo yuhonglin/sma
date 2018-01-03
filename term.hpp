@@ -23,9 +23,8 @@ public:
   virtual double func() = 0;
 
   // compute the gradient of the term.
-  virtual void   inc_grad(Variable* v, double* g) {
-    // do nothing
-  };
+  virtual void   inc_grad(Variable* v, double* g) = 0;
+
 
   // add variables (will be optimized)
   virtual void   add_var(Variable* v) {
