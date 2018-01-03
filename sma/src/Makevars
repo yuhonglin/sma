@@ -1,1 +1,1 @@
-PKG_CXXFLAGS+=-std=c++11 -I.
+PKG_CXXFLAGS+=-std=c++11 -DUSE_R_RNG -I.

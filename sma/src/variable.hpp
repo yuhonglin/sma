@@ -14,6 +14,13 @@
 #include <cstdlib>
 #include <cmath>
 
+#ifdef USE_R_RNG
+#include <R.h>
+#include <Rinternals.h>
+#endif
+
+#undef length
+
 #include "matrix.hpp"
 
 class Variable
@@ -69,10 +76,19 @@ public:
 
   // random init with uniform distribution
   void init_unif(double l, double u, int digit = 3) {
+#ifdef USE_R_RNG
+    double range = u-l;    
+    GetRNGstate();
+    for(int i = 0; i < m_*n_; i++) {
+      data_[i] = unif_rand()*range + l;
+    }
+    PutRNGstate();
+#else 
     int base = std::pow(10, 3);
     for(int i = 0; i < m_*n_; i++) {
       data_[i] = std::rand() % base / static_cast<double>(base) * (u-l) + l;
     }
+#endif
   }
     
 private:
