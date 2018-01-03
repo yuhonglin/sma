@@ -88,8 +88,30 @@ public:
       throw std::invalid_argument("AR: unknown variable");
     }
   }
+
+  std::shared_ptr<Variable> forecast(int l) {
+    auto ret = std::make_shared<Variable> (var_->m(), l, var_->name() + "_forcast");
+
+#define SMA_AR_GET_VALUE(A, B)						\
+    ( (B) < 0 ? (var_->data()[var_->m()*(var_->n()+(B)) + (A)])		\
+      : (ret->data()[ret->m()*(B) + (A)]) )				\
+
+    for (int i = 0; i < ret->m(); i++) {
+      for (int j = 0; j < ret->n(); j++) {
+	ret->data()[j*ret->m() + i] = 0;
+	for (int k = 0; k < lags_.size(); k++) {
+	  ret->data()[j*ret->m() + i] +=
+	    SMA_AR_GET_VALUE(i, j-lags_[k]) * param_->data()[k*param_->m()+i];
+	}
+      }
+    }
+
+#undef SMA_AR_GET_VALUE
+    
+    return ret;
+  }
   
-private:
+public:
   Variable* param_;   // the parameter of ar model
   Variable* var_;     // the data to be build a model on
   std::vector<int> lags_;
