@@ -1,4 +1,5 @@
 #include <vector>
+#include <cstdlib>
 
 #include <R.h>
 #inlcude <Rinternals.h>
@@ -78,6 +79,29 @@ extern "C" SEXP forecastc(SEXP Y_R,             // data matrix
   solver.solve();
 
   // return value: a list of matrices: F, X and T.
+  SEXP nms = PROTECT(allocVector(STRSXP, 3));
+  SEXP ret = PROTECT(allocVector(VECSXP, 3));
   
-  
+  SET_STRING_ELT(nms, 0, Rf_mkCharLen("F",1));
+  SEXP rF = PROTECT(Rf_allocMatrix(REALSXP, m, k));
+  std::memcpy(REAL(rF), F.data(), sizeof(double) * m*k);
+  SET_VECTOR_ELT(ret, 0, rF);
+  UNPROTECT(1);
+
+  SET_STRING_ELT(nms, 1, Rf_mkCharLen("X",1));
+  SEXP rX = PROTECT(Rf_allocMatrix(REALSXP, k, n));
+  std::memcpy(REAL(rX), X.data(), sizeof(double) * k*n);
+  SET_VECTOR_ELT(ret, 1, rX);
+  UNPROTECT(1);
+
+  SET_STRING_ELT(nms, 2, Rf_mkCharLen("T",1));
+  SEXP rT = PROTECT(Rf_allocMatrix(REALSXP, k, lag.size()));
+  std::memcpy(REAL(rF), T.data(), sizeof(double) * k*lag.size());
+  SET_VECTOR_ELT(ret, 2, rT);
+  UNPROTECT(1);
+
+  setAttrib(ret, R_NamesSymbol, nms);
+  UNPROTECT(2);
+
+  return ret;
 }
