@@ -75,6 +75,10 @@ public:
       
       loop_idx ++;
     }
+
+    if (loop_idx >= maxiter_) {
+      std::cout << "WARNING: maximum iteration reached." << std::endl;
+    }
   }
 
 private:
