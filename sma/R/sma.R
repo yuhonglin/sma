@@ -1,3 +1,21 @@
+##' Train a Matrix factorization model with specific parameters,
+##' and at the same time, forecast. We will factorize a data
+##' matrix Y as Y = FX and fit an auto regression model without shift 
+##' on X. 
+##'
+##' @title Train and forecast
+##' @param Y A data matrix, each row corresponds to one time series.
+##' @param k The lower rank to use, i.e., ncol(F) and nrow(X)
+##' @param lag The time lags used in the auto regression model built on X.
+##' @param lam.nF Hyperparameter for ther ||F||^2 term.
+##' @param lam.nX Hyperparameter for ther ||X||^2 term.
+##' @param lam.AR Hyperparameter for ther auto regression term.
+##' @param lam.nT Hyperparameter for ther ||T||^2 term where T is the
+##' parameter of the auto regression model.
+##' @param lam.nDF Hyperparameter for ther ||DF||^2 term.
+##' @param flen Prediction length.
+##' @return A list of the parameters and the forecast.
+##' @author Honglin Yu
 mf.train.noshift <- function(Y, k,
                              lag,
                              lam.nF,
@@ -21,7 +39,24 @@ mf.train.noshift <- function(Y, k,
     return (p);
 }
 
-
+##' Train a Matrix factorization model with specific parameters,
+##' and at the same time, forecast. We will factorize a data
+##' matrix Y as Y = FX and fit an auto regression model with shift 
+##' on X. 
+##'
+##' @title Train and forecast
+##' @param Y A data matrix, each row corresponds to one time series.
+##' @param k The lower rank to use, i.e., ncol(F) and nrow(X)
+##' @param lag The time lags used in the auto regression model built on X.
+##' @param lam.nF Hyperparameter for ther ||F||^2 term.
+##' @param lam.nX Hyperparameter for ther ||X||^2 term.
+##' @param lam.AR Hyperparameter for ther auto regression term.
+##' @param lam.nT Hyperparameter for ther ||T||^2 term where T is the
+##' parameter of the auto regression model.
+##' @param lam.nDF Hyperparameter for ther ||DF||^2 term.
+##' @param flen Prediction length.
+##' @return A list of the parameters and the forecast.
+##' @author Honglin Yu
 mf.train.shift <- function(Y, k,
                            lag,
                            lam.nF,
@@ -45,7 +80,20 @@ mf.train.shift <- function(Y, k,
     return (p);
 }
 
-
+##' Select the hyperparameters for MF method with shift
+##'
+##' @param Y.train The training data, each row is a time series
+##' @param Y.valid The testing data
+##' @param k The lower rank to do approximation.
+##' @param lag The lags to use.
+##' @param lam.nF The hyperparameter of ||F||^2 term.
+##' @param lam.nX The hyperparameter of ||X||^2 term.
+##' @param lam.AR The hyperparameter of auto regression term.
+##' @param lam.nT The hyperparameter of the ||T||^2 term where T
+##' is the parameter of the auto regression.
+##' @param lam.nDF The hyperparameter of the ||DF||^2 term.
+##' @return The best parameters.
+##' @author Honglin Yu
 mf.select.hyperparam.shift <- function (Y.train,
                                         Y.valid,
                                         k,
@@ -92,6 +140,20 @@ mf.select.hyperparam.shift <- function (Y.train,
     return (params[[which.min(mses)]])
 }
 
+##' Select the hyperparameters for MF method without shift
+##'
+##' @param Y.train The training data, each row is a time series
+##' @param Y.valid The testing data
+##' @param k The lower rank to do approximation.
+##' @param lag The lags to use.
+##' @param lam.nF The hyperparameter of ||F||^2 term.
+##' @param lam.nX The hyperparameter of ||X||^2 term.
+##' @param lam.AR The hyperparameter of auto regression term.
+##' @param lam.nT The hyperparameter of the ||T||^2 term where T
+##' is the parameter of the auto regression.
+##' @param lam.nDF The hyperparameter of the ||DF||^2 term.
+##' @return The best parameters.
+##' @author Honglin Yu
 mf.select.hyperparam.noshift <- function (Y.train,
                                           Y.valid,
                                           k,
