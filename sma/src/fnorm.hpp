@@ -15,6 +15,7 @@ class FNorm : public Term
 {
 public:
   FNorm(Variable* v) : var_(v), Term() {
+    num_term_ = v->m()*v->n();
     vars_.clear();
     vars_.insert(v);
   };
@@ -25,19 +26,21 @@ public:
     for (int i = 0; i < var_->m()*var_->n(); i++)
       ret += std::pow(var_->data()[i],2);
     
-    return 0.5*lambda_*ret;
+    return 0.5*lambda_*ret / num_term_;
   }
 
   virtual void   inc_grad(Variable* v, double* g) {
     if (v != var_) {
-      return;
+      throw std::invalid_argument("FNorm: unkown variable");
     }
 
+    double rate = lambda_ / num_term_;
     for (int i = 0; i < var_->m()*var_->n(); i++)
-      g[i] += lambda_*v->data()[i];
+      g[i] += rate*v->data()[i];
   }
   
 private:
+  int num_term_;
   Variable* var_;
 };
 

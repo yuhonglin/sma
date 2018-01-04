@@ -28,6 +28,7 @@ public:
 	    missing_  = false;
 	    mask_     = nullptr;
 	}
+	num_term_ = m*n;
     };
     virtual ~MatFact() = default;
 
@@ -54,23 +55,23 @@ public:
 
 	ret *= .5;
 	
-	return lambda_*ret/(m_*n_);
+	return lambda_*ret / num_term_;
     };
     
   virtual void   inc_grad(Variable* v, double* g) {
-    
+    double rate = lambda_ / num_term_;
     if (v->name() == "F") {
       // dF is stacked column by column
       //   g   = lambda* (  FX   -   Y  )  * ( X )' + g
       // (mxk)             (mxn)   (mxn)     (kxn)
       FORTRAN(dgemm)(&blas::N, &blas::T, &m_, &k_, &n_,
-		     &lambda_, FXY_.get(), &m_, X_->data(), &k_, &blas::done, g, &m_);
+		     &rate, FXY_.get(), &m_, X_->data(), &k_, &blas::done, g, &m_);
     } else if (v->name() == "X") {
       // dX is stacked column by column
       //   g   =   lambda* ( F )' * (  FX   -   Y  ) + g
       // (kxn)             (mxk)      (mxn)   (mxn) 
       FORTRAN(dgemm)(&blas::T, &blas::N, &k_, &n_, &m_,
-		     &lambda_, F_->data(), &m_, FXY_.get(), &m_, &blas::done, g, &k_);
+		     &rate, F_->data(), &m_, FXY_.get(), &m_, &blas::done, g, &k_);
     } else {
       throw std::invalid_argument("MatFact: unknown variable");
     }
@@ -108,7 +109,9 @@ private:
   int m_; // nrow of Y, F
   int n_; // ncol of Y, X
   int k_; // ncol of F, nrow of X
-    
+
+  int num_term_;
+  
   std::unique_ptr<double[]> FXY_; // FX - Y
 
   // observers to the varialbes

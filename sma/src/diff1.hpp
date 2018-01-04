@@ -19,9 +19,11 @@ public:
     vars_.insert(v);
     
     if (colwise == 0) { // rowwise
-      diff_.reset(new double[(v->n()-1)*v->m()]);
+      num_term_ = (v->n()-1)*v->m();
+      diff_.reset(new double[num_term_]);
     } else {
-      diff_.reset(new double[(v->m()-1)*v->n()]);
+      num_term_ = (v->m()-1)*v->n();
+      diff_.reset(new double[num_term_]);
     }
   };
   virtual ~Diff1() = default;
@@ -40,11 +42,12 @@ public:
 	}
 	idx ++;
       }
-      return 0.5*lambda_*ret;
+      return 0.5*lambda_*ret / num_term_;
     }
   }
 
   virtual void   inc_grad(Variable* v, double* g) {
+    double rate = lambda_ / num_term_;
     if (v != var_) {
       throw std::invalid_argument("Diff1: unkown variable");
     }
@@ -52,12 +55,12 @@ public:
       throw std::invalid_argument("Diff1: not implemented yet.");
     } else {
       for (int j = 0; j < v->n(); j++) {
-	g[j*var_->m()] -= lambda_ * diff_[j*(var_->m()-1)];
+	g[j*var_->m()] -= rate * diff_[j*(var_->m()-1)];
 	for (int i = 1; i < v->m()-1; i++) {
-	  g[j*var_->m()+i] -= lambda_ * diff_[j*(var_->m()-1) + i];
-	  g[j*var_->m()+i] += lambda_ * diff_[j*(var_->m()-1) + i + 1];
+	  g[j*var_->m()+i] -= rate * diff_[j*(var_->m()-1) + i];
+	  g[j*var_->m()+i] += rate * diff_[j*(var_->m()-1) + i + 1];
 	}
-	g[j*var_->m()+var_->m()-1] += lambda_*diff_[j*(var_->m()-1) + var_->m()-1 + 1];
+	g[j*var_->m()+var_->m()-1] += rate*diff_[j*(var_->m()-1) + var_->m()-1 + 1];
       }
     }
   }
@@ -65,6 +68,7 @@ public:
 private:
   Variable* var_;
   int colwise_;
+  int num_term_;
   std::unique_ptr<double[]> diff_;
 };
 

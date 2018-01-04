@@ -26,8 +26,10 @@ public:
     }
 
     max_lag_ = *std::max_element(lags_.begin(), lags_.end());
+
+    num_term_ = (var_->n() - max_lag_) * var_->m();
     
-    diff_.reset(new double[(var_->n() - max_lag_) * var_->m()]);
+    diff_.reset(new double[num_term_]);
 
     vars_.insert(v);
     vars_.insert(p);
@@ -54,19 +56,21 @@ public:
       }
     }
 
-    return 0.5*lambda_*ret;
+    return 0.5*lambda_*ret / num_term_;
   }
 
   virtual void   inc_grad(Variable* v, double* g) {
+    double rate = lambda_ / num_term_;
+    
     if (v == var_) {
       int base = var_->m()*max_lag_;
       int diffiter = 0;      
       for (int j = 0; j < var_->n()-max_lag_; j++) {
 	for (int i = 0; i < var_->m(); i++) {
 	  int vi = base+j*var_->m()+i;
-	  g[vi] += lambda_ * diff_[diffiter];
+	  g[vi] += rate * diff_[diffiter];
 	  for(int k = 0; k < lags_.size(); k++) {
-	    g[vi - lags_[k]*var_->m()] -= lambda_ * diff_[diffiter] * param_->data()[k*param_->m()+i];
+	    g[vi - lags_[k]*var_->m()] -= rate * diff_[diffiter] * param_->data()[k*param_->m()+i];
 	  }
 	  diffiter ++;
 	}
@@ -78,7 +82,7 @@ public:
 	for (int i = 0; i < var_->m(); i++) {
 	  for(int k = 0; k < lags_.size(); k++) {
 	    int pi = k*param_->m() + i;
-	    g[pi] -= lambda_ * diff_[diffiter]
+	    g[pi] -= rate * diff_[diffiter]
 	      * var_->data()[(max_lag_+j-lags_[k])*var_->m() + i];
 	  }
 	  diffiter ++;
@@ -116,6 +120,7 @@ public:
   Variable* var_;     // the data to be build a model on
   std::vector<int> lags_;
   int max_lag_;
+  int num_term_;      // number of terms in total, used in normalization
   std::unique_ptr<double[]> diff_;
 };
 
